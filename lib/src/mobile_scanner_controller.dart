@@ -40,6 +40,7 @@ class MobileScannerController {
   static int? _controllerHashcode;
   StreamSubscription? events;
 
+  final Function(bool permissionGranted)? onPermissionSet;
   final ValueNotifier<MobileScannerArguments?> args = ValueNotifier(null);
   final ValueNotifier<TorchState> torchState = ValueNotifier(TorchState.off);
   late final ValueNotifier<CameraFacing> cameraFacingState;
@@ -69,6 +70,7 @@ class MobileScannerController {
     this.formats,
     this.autoResume = true,
     this.returnImage = false,
+    this.onPermissionSet,
   }) {
     // In case a new instance is created before calling dispose()
     if (_controllerHashcode != null) {
@@ -157,11 +159,14 @@ class MobileScannerController {
           state = result
               ? MobileScannerState.authorized
               : MobileScannerState.denied;
+          onPermissionSet?.call(result);
           break;
         case MobileScannerState.denied:
           isStarting = false;
+          onPermissionSet?.call(false);
           throw PlatformException(code: 'NO ACCESS');
         case MobileScannerState.authorized:
+          onPermissionSet?.call(true);
           break;
       }
     }
@@ -193,6 +198,9 @@ class MobileScannerController {
     } on PlatformException catch (error) {
       debugPrint('${error.code}: ${error.message}');
       isStarting = false;
+      if (error.code == "MobileScannerWeb") {
+        onPermissionSet?.call(false);
+      }
       // setAnalyzeMode(AnalyzeMode.none.index);
       return;
     }
@@ -205,6 +213,8 @@ class MobileScannerController {
     hasTorch = startResult['torchable'] as bool? ?? false;
 
     if (kIsWeb) {
+      // If we reach this line, it means camera permission has been granted
+      onPermissionSet?.call(true);
       args.value = MobileScannerArguments(
         webId: startResult['ViewID'] as String?,
         size: Size(
