@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 import 'dart:ui';
 
-import 'package:mobile_scanner/src/objects/barcode_utility.dart';
+import 'package:mobile_scanner/src/barcode_utility.dart';
 
 /// Represents a single recognized barcode and its value.
 class Barcode {
@@ -11,11 +11,6 @@ class Barcode {
   ///
   /// Returns null if the corner points can not be determined.
   final List<Offset>? corners;
-
-  /// Returns raw bytes of the image buffer
-  ///
-  /// Returns null if the image was not returned
-  final Uint8List? image;
 
   /// Returns barcode format
   final BarcodeFormat format;
@@ -79,7 +74,6 @@ class Barcode {
 
   Barcode({
     this.corners,
-    this.image,
     this.format = BarcodeFormat.ean13,
     this.rawBytes,
     this.type = BarcodeType.text,
@@ -97,8 +91,10 @@ class Barcode {
   });
 
   /// Create a [Barcode] from native data.
-  Barcode.fromNative(Map data, this.image)
-      : corners = toCorners(data['corners'] as List?),
+  Barcode.fromNative(Map data)
+      : corners = toCorners(
+          (data['corners'] as List?)?.cast<Map<Object?, Object?>>(),
+        ),
         format = toFormat(data['format'] as int),
         rawBytes = data['rawBytes'] as Uint8List?,
         rawValue = data['rawValue'] as String?,
@@ -207,18 +203,20 @@ class ContactInfo {
   /// Create a [ContactInfo] from native data.
   ContactInfo.fromNative(Map data)
       : addresses = List.unmodifiable(
-          (data['addresses'] as List).map((e) => Address.fromNative(e as Map)),
+          (data['addresses'] as List? ?? [])
+              .cast<Map>()
+              .map(Address.fromNative),
         ),
         emails = List.unmodifiable(
-          (data['emails'] as List).map((e) => Email.fromNative(e as Map)),
+          (data['emails'] as List? ?? []).cast<Map>().map(Email.fromNative),
         ),
         name = toName(data['name'] as Map?),
         organization = data['organization'] as String?,
         phones = List.unmodifiable(
-          (data['phones'] as List).map((e) => Phone.fromNative(e as Map)),
+          (data['phones'] as List? ?? []).cast<Map>().map(Phone.fromNative),
         ),
         title = data['title'] as String?,
-        urls = List.unmodifiable(data['urls'] as List);
+        urls = List.unmodifiable((data['urls'] as List? ?? []).cast<String>());
 }
 
 /// An address.
@@ -233,7 +231,9 @@ class Address {
 
   /// Create a [Address] from native data.
   Address.fromNative(Map data)
-      : addressLines = List.unmodifiable(data['addressLines'] as List),
+      : addressLines = List.unmodifiable(
+          (data['addressLines'] as List? ?? []).cast<String>(),
+        ),
         type = AddressType.values[data['type'] as int];
 }
 
