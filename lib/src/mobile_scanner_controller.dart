@@ -421,6 +421,7 @@ class MobileScannerController {
 
   /// updates the native ScanWindow
   Future<void> updateScanWindow(Rect? window) async {
+    if (kIsWeb) return;
     List? data;
     if (window != null) {
       data = [window.left, window.top, window.right, window.bottom];
