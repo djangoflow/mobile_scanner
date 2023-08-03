@@ -193,7 +193,6 @@ class MobileScannerController {
             errorCode: MobileScannerErrorCode.permissionDenied,
           );
         case MobileScannerState.authorized:
-          onPermissionSet?.call(true);
           break;
       }
     }
